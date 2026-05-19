@@ -85,6 +85,17 @@ curl http://localhost:8766/secret/DB_PASSWORD
 - **docker build** (`docker-image.yml`): verifies clean Docker build
 - **docker publish** (`docker-publish.yml`): on version tags, publishes to `ghcr.io/sebgru/secretref-env-resolver`
 
+## Development
+
+This repository includes a VS Code devcontainer that installs the same local
+development tools used by CI:
+
+```bash
+ruff format --check .
+ruff check .
+pytest tests/test_unit.py -v
+```
+
 ## License
 
 MIT
