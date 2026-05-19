@@ -1,0 +1,11 @@
+services:
+  secretref-env-resolver:
+    build: .
+    container_name: secretref-env-resolver
+    restart: unless-stopped
+    ports:
+      - "8766:8766"
+    volumes:
+      # Mount your .env file into the container.
+      # Update the host path to point to your actual secrets file.
+      - ./creds/.env:/run/secrets/.env:ro
