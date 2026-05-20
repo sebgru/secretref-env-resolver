@@ -58,7 +58,6 @@ class SecretRefHandler(http.server.BaseHTTPRequestHandler):
     def _send_json(self, data: dict, status: int = 200) -> None:
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
-        self.send_header("Access-Control-Allow-Origin", "*")
         self.end_headers()
         self.wfile.write(json.dumps(data).encode() + b"\n")
 
@@ -72,7 +71,7 @@ class SecretRefHandler(http.server.BaseHTTPRequestHandler):
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path.rstrip("/")
 
-        if path == "/":
+        if not path:  # "/" and "//" both normalise to ""
             self._send_json(
                 {
                     "ok": True,
@@ -103,8 +102,10 @@ class SecretRefHandler(http.server.BaseHTTPRequestHandler):
                     "secrets": sorted(self.secrets.keys()),
                 }
             )
-        elif path.startswith("/secret/"):
-            name = path[len("/secret/") :]
+        elif parsed.path.startswith("/secret/"):
+            # Use the original path so that /secret/ (empty name) is caught here
+            # rather than falling through to the else branch after rstrip.
+            name = parsed.path[len("/secret/") :].rstrip("/")
             if not name or "/" in name:
                 self._send_json({"ok": False, "error": "invalid secret name"}, 400)
                 return
@@ -115,12 +116,9 @@ class SecretRefHandler(http.server.BaseHTTPRequestHandler):
         else:
             self._send_json({"ok": False, "error": "not found"}, 404)
 
-    def do_OPTIONS(self) -> None:  # noqa: N802
-        self.send_response(204)
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "*")
-        self.end_headers()
+    # do_OPTIONS intentionally omitted: this service is consumed by curl inside an
+    # isolated Docker network, not by browsers.  A wildcard CORS policy would widen
+    # the attack surface without any benefit.
 
 
 def main() -> None:

@@ -3,9 +3,41 @@ services:
     build: .
     container_name: secretref-env-resolver
     restart: unless-stopped
-    ports:
-      - "8766:8766"
+    # Do NOT publish port 8766 to the host in production.
+    # The service is intentionally reachable only from containers on the same
+    # named network below.  If you need to test it from the host during
+    # development you can temporarily add:
+    #   ports:
+    #     - "127.0.0.1:8766:8766"
+    expose:
+      - "8766"
     volumes:
-      # Mount your .env file into the container.
+      # Mount your .env file into the container (read-only).
       # Update the host path to point to your actual secrets file.
       - ./creds/.env:/run/secrets/.env:ro
+    networks:
+      - secretref-net
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python3",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8766/health')",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+networks:
+  secretref-net:
+    driver: bridge
+    # Attach OpenClaw (or any other consumer) to this network so it can reach
+    # secretref-env-resolver by container name.  Example in the consumer's
+    # compose file:
+    #   networks:
+    #     - secretref-net
+    # networks:
+    #   secretref-net:
+    #     external: true

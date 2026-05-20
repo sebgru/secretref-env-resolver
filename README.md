@@ -33,11 +33,21 @@ services:
     build: .
     container_name: secretref-env-resolver
     restart: unless-stopped
-    ports:
-      - "8766:8766"
+    expose:
+      - "8766"
     volumes:
-      - /secure/path/.secrets.env:/run/secrets/.env:ro
+      - ./creds/.env:/run/secrets/.env:ro
+    networks:
+      - secretref-net
+
+networks:
+  secretref-net:
+    driver: bridge
 ```
+
+> **Important**: do **not** add `ports: - "8766:8766"`.  Port 8766 must only be
+> reachable from containers on the same Docker network.  Publishing it to the
+> host exposes all your secrets to any process on the host.
 
 ### 3. OpenClaw SecretRef config
 
@@ -51,6 +61,9 @@ In your `openclaw.json`, reference secrets like:
   }
 }
 ```
+
+> The OpenClaw container must be attached to the same Docker network
+> (`secretref-net`) so it can resolve the `secretref-env-resolver` hostname.
 
 ## API Endpoints
 
@@ -78,6 +91,12 @@ curl http://localhost:8766/secret/DB_PASSWORD
 - **No secret exposure in logs**: only secret *counts* reported at startup
 - **Read-only mount**: the `.env` file is mounted with `:ro` to prevent modification
 - **No secrets in env vars**: secrets stay in the file, not in container environment
+- **No CORS headers**: the service is internal-only; a browser-accessible CORS
+  wildcard would unnecessarily widen the attack surface
+- **Network isolation is the primary security boundary**: port 8766 must **not**
+  be published to the host.  Only containers on the same named Docker network
+  (`secretref-net`) can reach this service.  There is no authentication — network
+  isolation is the only access control.
 
 ## CI/CD
 
@@ -93,7 +112,7 @@ development tools used by CI:
 ```bash
 ruff format --check .
 ruff check .
-pytest tests/test_unit.py -v
+pytest tests/test_unit.py -v --cov=server --cov-report=term-missing
 ```
 
 ## License

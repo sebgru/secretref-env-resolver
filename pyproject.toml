@@ -16,3 +16,11 @@ docstring-code-format = true
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+
+[tool.coverage.run]
+source = ["server"]
+branch = true
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true
