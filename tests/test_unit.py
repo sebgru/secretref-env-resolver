@@ -4,7 +4,6 @@ Unit tests for secretref-env-resolver.
 Tests the .env parser and basic handler logic without a running server.
 """
 
-import json
 import os
 import tempfile
 

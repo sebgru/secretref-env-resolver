@@ -73,32 +73,38 @@ class SecretRefHandler(http.server.BaseHTTPRequestHandler):
         path = parsed.path.rstrip("/")
 
         if path == "/":
-            self._send_json({
-                "ok": True,
-                "service": "secretref-env-resolver",
-                "env_file": ENV_PATH,
-                "secret_count": len(self.secrets),
-                "endpoints": {
-                    "GET /": "this help",
-                    "GET /health": "health check",
-                    "GET /list": "list available secret names",
-                    "GET /secret/<name>": "return a specific secret value",
-                },
-            })
+            self._send_json(
+                {
+                    "ok": True,
+                    "service": "secretref-env-resolver",
+                    "env_file": ENV_PATH,
+                    "secret_count": len(self.secrets),
+                    "endpoints": {
+                        "GET /": "this help",
+                        "GET /health": "health check",
+                        "GET /list": "list available secret names",
+                        "GET /secret/<name>": "return a specific secret value",
+                    },
+                }
+            )
         elif path == "/health":
-            self._send_json({
-                "ok": True,
-                "service": "secretref-env-resolver",
-                "env_file_found": os.path.isfile(ENV_PATH),
-                "secret_count": len(self.secrets),
-            })
+            self._send_json(
+                {
+                    "ok": True,
+                    "service": "secretref-env-resolver",
+                    "env_file_found": os.path.isfile(ENV_PATH),
+                    "secret_count": len(self.secrets),
+                }
+            )
         elif path == "/list":
-            self._send_json({
-                "ok": True,
-                "secrets": sorted(self.secrets.keys()),
-            })
+            self._send_json(
+                {
+                    "ok": True,
+                    "secrets": sorted(self.secrets.keys()),
+                }
+            )
         elif path.startswith("/secret/"):
-            name = path[len("/secret/"):]
+            name = path[len("/secret/") :]
             if not name or "/" in name:
                 self._send_json({"ok": False, "error": "invalid secret name"}, 400)
                 return
