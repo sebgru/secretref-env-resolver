@@ -13,7 +13,7 @@ USER appuser
 EXPOSE 8766
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-    CMD python3 -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8766/health')" || exit 1
+    CMD python3 -c "import os, urllib.request; port = os.environ.get('SECRETREF_PORT', '8766'); urllib.request.urlopen(f'http://127.0.0.1:{port}/health')" || exit 1
 
 ENV SECRETREF_ENV_PATH=/run/secrets/.env
 ENV SECRETREF_HOST=0.0.0.0

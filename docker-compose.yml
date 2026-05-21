@@ -23,7 +23,7 @@ services:
           "CMD",
           "python3",
           "-c",
-          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8766/health')",
+          "import os, urllib.request; port = os.environ.get('SECRETREF_PORT', '8766'); urllib.request.urlopen(f'http://127.0.0.1:{port}/health')",
         ]
       interval: 30s
       timeout: 5s

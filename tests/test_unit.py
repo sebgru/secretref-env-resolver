@@ -8,6 +8,7 @@ import http.client
 import http.server
 import json
 import os
+import pathlib
 import tempfile
 import threading
 
@@ -202,3 +203,14 @@ def test_server_module_has_expected_constants():
     assert server.PORT > 0
     assert isinstance(server.HOST, str)
     assert isinstance(server.ENV_PATH, str)
+
+
+def test_container_healthchecks_respect_secretref_port():
+    """Container healthchecks must follow SECRETREF_PORT overrides."""
+    root = pathlib.Path(__file__).resolve().parents[1]
+    dockerfile = (root / "Dockerfile").read_text(encoding="utf-8")
+    compose = (root / "docker-compose.yml").read_text(encoding="utf-8")
+
+    for content in (dockerfile, compose):
+        assert "SECRETREF_PORT" in content
+        assert "127.0.0.1:8766/health" not in content
