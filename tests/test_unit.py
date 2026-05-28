@@ -11,6 +11,7 @@ import os
 import pathlib
 import tempfile
 import threading
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -214,3 +215,52 @@ def test_container_healthchecks_respect_secretref_port():
     for content in (dockerfile, compose):
         assert "SECRETREF_PORT" in content
         assert "127.0.0.1:8766/health" not in content
+
+
+def test_load_env_empty_key_ignored():
+    """Lines where the key is empty (e.g. '=value') are silently skipped."""
+    content = "=orphan_value\nKEY=value\n"
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".env", delete=False) as f:
+        f.write(content)
+        path = f.name
+
+    try:
+        secrets = server.load_env(path)
+        assert secrets == {"KEY": "value"}
+    finally:
+        os.unlink(path)
+
+
+def test_main_missing_env_file_prints_warning(capsys, tmp_path):
+    """main() warns when the env file is not found, then starts the server."""
+    mock_httpd = MagicMock()
+    mock_httpd.serve_forever.side_effect = KeyboardInterrupt
+
+    with (
+        patch.object(server, "ENV_PATH", str(tmp_path / "nonexistent.env")),
+        patch("http.server.HTTPServer", return_value=mock_httpd),
+    ):
+        server.main()
+
+    captured = capsys.readouterr()
+    assert "Warning" in captured.err
+    mock_httpd.server_close.assert_called_once()
+
+
+def test_main_with_env_file(capsys, tmp_path):
+    """main() loads secrets, starts the server and shuts down on KeyboardInterrupt."""
+    env = tmp_path / ".env"
+    env.write_text("SECRET=value\n")
+
+    mock_httpd = MagicMock()
+    mock_httpd.serve_forever.side_effect = KeyboardInterrupt
+
+    with (
+        patch.object(server, "ENV_PATH", str(env)),
+        patch("http.server.HTTPServer", return_value=mock_httpd),
+    ):
+        server.main()
+
+    captured = capsys.readouterr()
+    assert "Loaded 1 secrets" in captured.err
+    mock_httpd.server_close.assert_called_once()

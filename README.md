@@ -1,6 +1,7 @@
 # secretref-env-resolver
 
 ![CI](https://github.com/sebgru/secretref-env-resolver/actions/workflows/ci.yml/badge.svg)
+[![Coverage](https://codecov.io/gh/sebgru/secretref-env-resolver/branch/main/graph/badge.svg)](https://codecov.io/gh/sebgru/secretref-env-resolver)
 ![GitHub](https://img.shields.io/github/license/sebgru/secretref-env-resolver.svg)
 
 **Allowlisted read-only OpenClaw SecretRef resolver bridge** — securely exposes named secrets from a mounted `.env` file via HTTP for consumption by OpenClaw's `exec` SecretRef type.
@@ -15,6 +16,18 @@ Designed for the same pattern as [nvidia-smi-service](https://github.com/sebgru/
 
 No secrets appear in environment variables, command lines, or logs.
 
+## Configuration
+
+All configuration is done via environment variables:
+
+| Variable | Default | Description |
+|---|---|---|
+| `SECRETREF_ENV_PATH` | `/run/secrets/.env` | Path to the mounted `.env` file inside the container |
+| `SECRETREF_HOST` | `0.0.0.0` | Bind address |
+| `SECRETREF_PORT` | `8766` | Port the HTTP server listens on |
+
+Override them in your `docker-compose.yml` under `environment:` if needed.
+
 ## Quick Start
 
 ### 1. Create your .env file
@@ -26,6 +39,14 @@ chmod 600 /secure/path/.secrets.env
 ```
 
 ### 2. docker-compose
+
+You can use the pre-built image from the GitHub Container Registry instead of building locally:
+
+```yaml
+image: ghcr.io/sebgru/secretref-env-resolver:latest
+```
+
+Or build it yourself (replace `image:` with `build: .`).
 
 ```yaml
 services:

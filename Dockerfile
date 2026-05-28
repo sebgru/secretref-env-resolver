@@ -10,8 +10,6 @@ RUN chmod +x /app/server.py
 RUN adduser --disabled-password --gecos '' appuser
 USER appuser
 
-EXPOSE 8766
-
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
     CMD python3 -c "import os, urllib.request; port = os.environ.get('SECRETREF_PORT', '8766'); urllib.request.urlopen(f'http://127.0.0.1:{port}/health')" || exit 1
 
