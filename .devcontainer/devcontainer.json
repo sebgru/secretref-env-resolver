@@ -3,6 +3,12 @@
   // ── Base image ───────────────────────────────────────────────────────────
   // Standard Microsoft Python devcontainer.
   "image": "mcr.microsoft.com/devcontainers/python:3.12",
+  // ── Features ─────────────────────────────────────────────────────────────
+  // GitHub CLI (gh) so PRs, issues and releases can be managed from inside
+  // the container. Authentication is reused from the host (see mounts below).
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
   // ── Workspace ────────────────────────────────────────────────────────────
   // Mount the repo at /workspace (instead of the default /workspaces/<name>).
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
@@ -12,7 +18,7 @@
   // Creates empty placeholder files/dirs if they don't already exist so the
   // bind mounts below never fail for contributors who don't have these files.
   // `touch -a` is a no-op if the file already exists — completely harmless.
-  "initializeCommand": "mkdir -p ~/.ssh && touch -a ~/.gitconfig ~/.vimrc ~/.profile",
+  "initializeCommand": "mkdir -p ~/.ssh ~/.config/gh && touch -a ~/.gitconfig ~/.vimrc ~/.profile",
   // ── Personal dotfile mounts ──────────────────────────────────────────────
   // Bound from the host user's $HOME into the container.
   // For contributors who don't have these files, the empty stubs above are
@@ -20,14 +26,20 @@
   //
   // .ssh is staged at /tmp/host-ssh; setup.sh copies it with the required
   // 700/600 permissions (bind mounts can't change permissions).
+  //
+  // ~/.config/gh is mounted directly so the host's `gh auth login` is reused
+  // as-is — no re-authentication inside the container. setup.sh fixes the
+  // ownership/read permissions of the mounted paths.
   "mounts": [
     "source=${localEnv:HOME}/.gitconfig,target=/home/vscode/.gitconfig,type=bind",
     "source=${localEnv:HOME}/.vimrc,target=/home/vscode/.vimrc,type=bind",
     "source=${localEnv:HOME}/.profile,target=/home/vscode/.profile-host,type=bind,readonly=true",
-    "source=${localEnv:HOME}/.ssh,target=/tmp/host-ssh,type=bind,readonly=true"
+    "source=${localEnv:HOME}/.ssh,target=/tmp/host-ssh,type=bind,readonly=true",
+    "source=${localEnv:HOME}${localEnv:USERPROFILE}/.config/gh,target=/home/vscode/.config/gh,type=bind"
   ],
   // ── Post-create setup ────────────────────────────────────────────────────
   "postCreateCommand": "bash /workspace/.devcontainer/setup.sh",
+  "postStartCommand": "gh auth status || echo 'WARNING: gh is not logged in - run gh auth login'",
   "customizations": {
     "vscode": {
       "extensions": [
@@ -36,7 +48,9 @@
         "ms-python.pylance",
         // Ruff: linter + formatter (matches CI)
         "charliermarsh.ruff",
-        "github.vscode-github-actions"
+        "github.vscode-github-actions",
+        // Claude Code extension (uses the host's existing login)
+        "anthropic.claude-code"
       ],
       "settings": {
         "terminal.integrated.defaultProfile.linux": "zsh",

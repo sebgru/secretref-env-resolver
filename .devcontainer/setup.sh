@@ -26,6 +26,21 @@ else
     echo "  No SSH keys found on host — skipping."
 fi
 
+# ── Host credentials (git / ssh / gh) ────────────────────────────────────────
+# The host's ~/.gitconfig, ~/.ssh and ~/.config/gh are bind-mounted into the
+# container user's home so the host's `git` and `gh` logins are reused as-is —
+# no copy step and no re-authentication. A bind mount keeps the host uid, which
+# usually differs from the container user, so grant the container user
+# ownership of the mounted paths (otherwise a 0600 hosts.yml/key is unreadable
+# and gh/ssh fail).
+echo "→ Fixing ownership of mounted host config…"
+for path in ~/.gitconfig ~/.ssh ~/.config/gh; do
+    if [ -e "$path" ]; then
+        sudo chown -R "$(id -u):$(id -g)" "$path"
+    fi
+done
+echo "  Done."
+
 # ── .profile (SSH signing env vars etc.) ──────────────────────────────────────
 # The host .profile is mounted to ~/.profile-host.
 # VS Code terminals start as non-login interactive shells, so ~/.profile is
@@ -50,3 +65,5 @@ echo "   Workspace : /workspace"
 echo "   Python    : $(python3 --version)"
 echo "   ruff      : $(ruff --version)"
 echo "   pytest    : $(pytest --version 2>&1 | head -1)"
+echo "   gh        : $(gh --version 2>&1 | head -1)"
+echo "   gh auth   : $(gh auth status 2>&1 | head -1 || true)"

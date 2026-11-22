@@ -136,6 +136,12 @@ ruff check .
 pytest tests/test_unit.py -v --cov=server --cov-report=term-missing
 ```
 
+The devcontainer also ships the [GitHub CLI](https://cli.github.com/) (`gh`) and
+the Claude Code extension. Your host's `~/.gitconfig`, `~/.ssh` and
+`~/.config/gh` are bind-mounted into the container, so existing `git` and `gh`
+logins are reused as-is — no re-authentication is needed. If `gh auth status`
+reports missing credentials, run `gh auth login` once on the host.
+
 ## License
 
 MIT
