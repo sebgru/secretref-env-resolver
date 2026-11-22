@@ -6,6 +6,16 @@ RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
 COPY server.py /app/server.py
 RUN chmod +x /app/server.py
 
+# ── Strip pip from the runtime image ────────────────────────────────────────
+# The service is stdlib-only and pip is never used at runtime. pip ships
+# vendored copies of msgpack/urllib3/setuptools that raise HIGH CVEs in image
+# scanners, and they can only be fixed by a pip release — which still vendors a
+# vulnerable setuptools. Dropping pip removes that attack surface entirely and
+# keeps the Trivy gate green.
+RUN rm -rf /usr/local/lib/python3.*/site-packages/pip \
+           /usr/local/lib/python3.*/site-packages/pip-*.dist-info \
+           /usr/local/bin/pip /usr/local/bin/pip3 /usr/local/bin/pip3.*
+
 # Run as non-root user for security.
 RUN adduser --disabled-password --gecos '' appuser
 USER appuser

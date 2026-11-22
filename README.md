@@ -125,6 +125,10 @@ curl http://localhost:8766/secret/DB_PASSWORD
 - **docker build** (`docker-image.yml`): verifies clean Docker build
 - **docker publish** (`docker-publish.yml`): on version tags, publishes to `ghcr.io/sebgru/secretref-env-resolver`
 
+The runtime image ships **without pip**: the service is stdlib-only, and pip's
+vendored `urllib3`/`msgpack`/`setuptools` copies are a recurring source of HIGH
+CVEs in the Trivy scan that cannot be fixed without dropping pip.
+
 ## Development
 
 This repository includes a VS Code devcontainer that installs the same local
