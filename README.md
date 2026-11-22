@@ -142,6 +142,11 @@ the Claude Code extension. Your host's `~/.gitconfig`, `~/.ssh` and
 logins are reused as-is — no re-authentication is needed. If `gh auth status`
 reports missing credentials, run `gh auth login` once on the host.
 
+Your host SSH config is copied into the container and compared against the
+container's OpenSSH version; any directives the container does not support
+(e.g. `WarnWeakCrypto`) are commented out automatically so git-over-SSH keeps
+working without touching the host file.
+
 ## License
 
 MIT

@@ -26,6 +26,27 @@ else
     echo "  No SSH keys found on host — skipping."
 fi
 
+# ── SSH config sanitisation ──────────────────────────────────────────────────
+# The host's ~/.ssh/config may use options that this container's OpenSSH does
+# not know yet (e.g. `WarnWeakCrypto` on older/newer mismatches). ssh aborts on
+# any unknown keyword, which breaks git-over-SSH. Use ssh's own error output to
+# find each offending line and comment it out, repeating until the file parses.
+if [ -f ~/.ssh/config ]; then
+    echo "→ Sanitising ~/.ssh/config for this OpenSSH version…"
+    for _ in 1 2 3 4 5 6 7 8 9 10; do
+        ssh_err=$(ssh -G github.com 2>&1 >/dev/null || true)
+        bad_line=$(printf '%s\n' "$ssh_err" \
+            | sed -n 's|^.*\.ssh/config: line \([0-9]\{1,\}\): Bad configuration option:.*|\1|p' \
+            | head -1)
+        if [ -z "$bad_line" ]; then
+            echo "  Config parses cleanly."
+            break
+        fi
+        echo "  Commenting out unsupported option on line $bad_line."
+        sed -i "${bad_line}s|^|# Unsupported by container OpenSSH: |" ~/.ssh/config
+    done
+fi
+
 # ── Host credentials (git / ssh / gh) ────────────────────────────────────────
 # The host's ~/.gitconfig, ~/.ssh and ~/.config/gh are bind-mounted into the
 # container user's home so the host's `git` and `gh` logins are reused as-is —
